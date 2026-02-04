@@ -301,5 +301,3 @@ This project is perfect for:
 ---
 
 **Enjoy exploring movies with CineScope! 🎬✨**
-#   C i n e S c o p e  
- 
