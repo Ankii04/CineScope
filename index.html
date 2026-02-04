@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineScope - Movie & TV Discovery Hub</title>
+    <meta name="description" content="Discover trending movies and TV shows with advanced search and filtering powered by TMDB API">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Performance Metrics Panel -->
+    <div class="metrics-panel" id="metricsPanel">
+        <button class="metrics-toggle" id="metricsToggle">
+            <i class="fas fa-chart-line"></i>
+        </button>
+        <div class="metrics-content" id="metricsContent">
+            <h3><i class="fas fa-tachometer-alt"></i> Performance Metrics</h3>
+            <div class="metric-item">
+                <span class="metric-label">API Calls Made:</span>
+                <span class="metric-value" id="apiCallsMade">0</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">API Calls Saved:</span>
+                <span class="metric-value highlight" id="apiCallsSaved">0</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Search Events:</span>
+                <span class="metric-value" id="searchEvents">0</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Scroll Events:</span>
+                <span class="metric-value" id="scrollEvents">0</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Debounce Delay:</span>
+                <span class="metric-value">300ms</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Throttle Delay:</span>
+                <span class="metric-value">200ms</span>
+            </div>
+            <div class="efficiency-bar">
+                <div class="efficiency-label">Efficiency:</div>
+                <div class="efficiency-progress">
+                    <div class="efficiency-fill" id="efficiencyFill"></div>
+                </div>
+                <div class="efficiency-percent" id="efficiencyPercent">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-film"></i>
+                    <h1>CineScope</h1>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" data-type="movie">
+                        <i class="fas fa-video"></i> Movies
+                    </button>
+                    <button class="nav-btn" data-type="tv">
+                        <i class="fas fa-tv"></i> TV Shows
+                    </button>
+                    <button class="nav-btn" id="watchlistBtn">
+                        <i class="fas fa-bookmark"></i> 
+                        Watchlist
+                        <span class="badge" id="watchlistBadge">0</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h2 class="hero-title">Discover Your Next Favorite</h2>
+                <p class="hero-subtitle">Explore millions of movies and TV shows with intelligent search</p>
+                
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input 
+                            type="text" 
+                            class="search-input" 
+                            id="searchInput" 
+                            placeholder="Search for movies, TV shows..."
+                            autocomplete="off"
+                        >
+                        <button class="clear-btn" id="clearBtn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="search-indicator" id="searchIndicator">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    <div class="search-stats" id="searchStats"></div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters">
+                    <select class="filter-select" id="genreFilter">
+                        <option value="">All Genres</option>
+                    </select>
+                    <select class="filter-select" id="yearFilter">
+                        <option value="">All Years</option>
+                    </select>
+                    <select class="filter-select" id="sortFilter">
+                        <option value="popularity.desc">Most Popular</option>
+                        <option value="vote_average.desc">Highest Rated</option>
+                        <option value="release_date.desc">Latest Release</option>
+                        <option value="revenue.desc">Highest Revenue</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Results Info -->
+            <div class="results-info" id="resultsInfo">
+                <h3 id="resultsTitle">Trending Movies</h3>
+                <p id="resultsCount"></p>
+            </div>
+
+            <!-- Movies Grid -->
+            <div class="movies-grid" id="moviesGrid">
+                <!-- Movie cards will be inserted here -->
+            </div>
+
+            <!-- Loading Skeleton -->
+            <div class="loading-skeleton" id="loadingSkeleton">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+
+            <!-- Load More Indicator -->
+            <div class="load-more-indicator" id="loadMoreIndicator">
+                <div class="spinner-large"></div>
+                <p>Loading more content...</p>
+            </div>
+
+            <!-- No Results -->
+            <div class="no-results" id="noResults">
+                <i class="fas fa-search"></i>
+                <h3>No results found</h3>
+                <p>Try adjusting your search or filters</p>
+            </div>
+
+            <!-- Scroll to Top -->
+            <button class="scroll-top" id="scrollTop">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+        </div>
+    </main>
+
+    <!-- Movie Detail Modal -->
+    <div class="modal" id="movieModal">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body" id="modalBody">
+                <!-- Movie details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Watchlist Modal -->
+    <div class="modal" id="watchlistModal">
+        <div class="modal-overlay" id="watchlistOverlay"></div>
+        <div class="modal-content watchlist-content">
+            <button class="modal-close" id="watchlistClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <h2><i class="fas fa-bookmark"></i> My Watchlist</h2>
+            </div>
+            <div class="watchlist-grid" id="watchlistGrid">
+                <!-- Watchlist items will be inserted here -->
+            </div>
+            <div class="empty-watchlist" id="emptyWatchlist">
+                <i class="fas fa-bookmark"></i>
+                <h3>Your watchlist is empty</h3>
+                <p>Start adding movies and TV shows to watch later!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
