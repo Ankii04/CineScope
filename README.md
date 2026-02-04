@@ -2,11 +2,6 @@
 
 A stunning, modern web application for discovering movies and TV shows with **intelligent search powered by throttle and debounce techniques**. Built with vanilla HTML, CSS, and JavaScript, showcasing performance optimization and beautiful UI/UX design.
 
-![CineScope Preview](https://img.shields.io/badge/Status-Live-success?style=for-the-badge)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-
 ## ✨ Features
 
 ### 🎯 Core Functionality
@@ -269,18 +264,6 @@ Modify grid columns in `styles.css`:
 
 This project is open source and available for educational purposes.
 
-## 🙏 Credits
-
-- **TMDB API** for movie/TV data
-- **Font Awesome** for icons
-- **Google Fonts** for typography (Inter & Outfit)
-
-## 👨‍💻 Author
-
-Created as a demonstration of **throttle and debounce techniques** in modern web development.
-
----
-
 ### 🎓 Educational Value
 
 This project is perfect for:
@@ -289,15 +272,3 @@ This project is perfect for:
 - Practicing modern CSS techniques
 - Building real-world applications
 - Portfolio showcase
-
-### 💡 Tips for Presentation
-
-1. **Open Performance Metrics** to show real-time efficiency
-2. **Type slowly in search** to demonstrate debounce delay
-3. **Scroll rapidly** to show throttle limiting events
-4. **Compare efficiency** before and after using the app
-5. **Highlight the visual design** and smooth animations
-
----
-
-**Enjoy exploring movies with CineScope! 🎬✨**
