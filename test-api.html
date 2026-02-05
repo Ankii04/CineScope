@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #4f46e5;
+        }
+
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .success {
+            color: #51cf66;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎬 TMDB API Debugger</h1>
+
+    <div class="test-section">
+        <h2>API Key Configuration</h2>
+        <label for="apiKey">Enter your TMDB API Key:</label>
+        <input type="text" id="apiKey" value="8265bd1679663a7ea12ac168da84d2e8" placeholder="Your API Key">
+        <p style="font-size: 12px; color: #888;">Get your API key from: <a
+                href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #6366f1;">TMDB Settings</a>
+        </p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: Basic API Connection</h2>
+        <button onclick="testBasicConnection()">Test Connection</button>
+        <pre id="result1">Click the button to test...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Fetch Trending Movies</h2>
+        <button onclick="testTrendingMovies()">Fetch Trending Movies</button>
+        <pre id="result2">Click the button to test...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Search Movies</h2>
+        <input type="text" id="searchQuery" placeholder="Enter movie name (e.g., Inception)">
+        <button onclick="testSearch()">Search</button>
+        <pre id="result3">Enter a movie name and click search...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Fetch Genres</h2>
+        <button onclick="testGenres()">Fetch Genres</button>
+        <pre id="result4">Click the button to test...</pre>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://api.themoviedb.org/3';
+
+        function getApiKey() {
+            return document.getElementById('apiKey').value.trim();
+        }
+
+        function displayResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = isError ? 'error' : 'success';
+            element.textContent = message;
+        }
+
+        async function testBasicConnection() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                displayResult('result1', 'Error: Please enter an API key', true);
+                return;
+            }
+
+            displayResult('result1', 'Testing connection...');
+
+            try {
+                const url = `${BASE_URL}/configuration?api_key=${apiKey}`;
+                console.log('Testing URL:', url);
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayResult('result1',
+                        `✅ SUCCESS!\n\n` +
+                        `Status: ${response.status} ${response.statusText}\n` +
+                        `API is working correctly!\n\n` +
+                        `Configuration:\n${JSON.stringify(data, null, 2)}`
+                    );
+                } else {
+                    displayResult('result1',
+                        `❌ API Error!\n\n` +
+                        `Status: ${response.status} ${response.statusText}\n` +
+                        `Error: ${data.status_message || 'Unknown error'}\n\n` +
+                        `Full Response:\n${JSON.stringify(data, null, 2)}`,
+                        true
+                    );
+                }
+            } catch (error) {
+                displayResult('result1',
+                    `❌ Network Error!\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `Possible causes:\n` +
+                    `- No internet connection\n` +
+                    `- CORS policy blocking the request\n` +
+                    `- Firewall blocking TMDB API\n` +
+                    `- DNS resolution issues\n\n` +
+                    `Full Error:\n${error.stack}`,
+                    true
+                );
+            }
+        }
+
+        async function testTrendingMovies() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                displayResult('result2', 'Error: Please enter an API key', true);
+                return;
+            }
+
+            displayResult('result2', 'Fetching trending movies...');
+
+            try {
+                const url = `${BASE_URL}/trending/movie/week?api_key=${apiKey}`;
+                console.log('Fetching URL:', url);
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const movies = data.results.slice(0, 5).map(m =>
+                        `- ${m.title} (${m.release_date?.split('-')[0]}) - Rating: ${m.vote_average}`
+                    ).join('\n');
+
+                    displayResult('result2',
+                        `✅ SUCCESS!\n\n` +
+                        `Found ${data.total_results} trending movies\n` +
+                        `Showing top 5:\n\n${movies}`
+                    );
+                } else {
+                    displayResult('result2',
+                        `❌ API Error!\n\n` +
+                        `Status: ${response.status} ${response.statusText}\n` +
+                        `Error: ${data.status_message || 'Unknown error'}`,
+                        true
+                    );
+                }
+            } catch (error) {
+                displayResult('result2',
+                    `❌ Network Error!\n\n${error.message}`,
+                    true
+                );
+            }
+        }
+
+        async function testSearch() {
+            const apiKey = getApiKey();
+            const query = document.getElementById('searchQuery').value.trim();
+
+            if (!apiKey) {
+                displayResult('result3', 'Error: Please enter an API key', true);
+                return;
+            }
+
+            if (!query) {
+                displayResult('result3', 'Error: Please enter a movie name', true);
+                return;
+            }
+
+            displayResult('result3', `Searching for "${query}"...`);
+
+            try {
+                const url = `${BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
+                console.log('Search URL:', url);
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.results.length === 0) {
+                        displayResult('result3', `No results found for "${query}"`);
+                    } else {
+                        const movies = data.results.slice(0, 5).map(m =>
+                            `- ${m.title} (${m.release_date?.split('-')[0] || 'N/A'}) - Rating: ${m.vote_average}`
+                        ).join('\n');
+
+                        displayResult('result3',
+                            `✅ SUCCESS!\n\n` +
+                            `Found ${data.total_results} results for "${query}"\n` +
+                            `Showing top 5:\n\n${movies}`
+                        );
+                    }
+                } else {
+                    displayResult('result3',
+                        `❌ API Error!\n\n` +
+                        `Status: ${response.status} ${response.statusText}\n` +
+                        `Error: ${data.status_message || 'Unknown error'}`,
+                        true
+                    );
+                }
+            } catch (error) {
+                displayResult('result3',
+                    `❌ Network Error!\n\n${error.message}`,
+                    true
+                );
+            }
+        }
+
+        async function testGenres() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                displayResult('result4', 'Error: Please enter an API key', true);
+                return;
+            }
+
+            displayResult('result4', 'Fetching genres...');
+
+            try {
+                const url = `${BASE_URL}/genre/movie/list?api_key=${apiKey}`;
+                console.log('Genres URL:', url);
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const genres = data.genres.map(g => `- ${g.name} (ID: ${g.id})`).join('\n');
+
+                    displayResult('result4',
+                        `✅ SUCCESS!\n\n` +
+                        `Found ${data.genres.length} genres:\n\n${genres}`
+                    );
+                } else {
+                    displayResult('result4',
+                        `❌ API Error!\n\n` +
+                        `Status: ${response.status} ${response.statusText}\n` +
+                        `Error: ${data.status_message || 'Unknown error'}`,
+                        true
+                    );
+                }
+            } catch (error) {
+                displayResult('result4',
+                    `❌ Network Error!\n\n${error.message}`,
+                    true
+                );
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            console.log('🎬 TMDB API Debugger loaded');
+            console.log('Open the browser console to see detailed logs');
+        });
+    </script>
+</body>
+
+</html>

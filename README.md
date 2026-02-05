@@ -289,17 +289,3 @@ This project is perfect for:
 - Practicing modern CSS techniques
 - Building real-world applications
 - Portfolio showcase
-
-### 💡 Tips for Presentation
-
-1. **Open Performance Metrics** to show real-time efficiency
-2. **Type slowly in search** to demonstrate debounce delay
-3. **Scroll rapidly** to show throttle limiting events
-4. **Compare efficiency** before and after using the app
-5. **Highlight the visual design** and smooth animations
-
----
-
-**Enjoy exploring movies with CineScope! 🎬✨**
-#   C i n e S c o p e  
- 
