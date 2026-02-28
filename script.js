@@ -1,6 +1,6 @@
 // ⚠️ NETWORK FIX: If you're getting "Failed to fetch" errors, set USE_CORS_PROXY to true
-const USE_CORS_PROXY = true; // Change to true if you have network/firewall issues
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const USE_CORS_PROXY = true; // Changed to true for maximum reliability
+const CORS_PROXY = 'https://corsproxy.io/?'; // Switched to a more stable proxy
 
 const CONFIG = {
     API_KEY: '8265bd1679663a7ea12ac168da84d2e8', // TMDB API Key (free tier)
@@ -10,6 +10,8 @@ const CONFIG = {
     BACKDROP_SIZE: 'w1280',
     DEBOUNCE_DELAY: 300,
     THROTTLE_DELAY: 200,
+    MAX_RETRIES: 3, // Added retry limit
+    RETRY_DELAY: 1000, // Added delay between retries (ms)
 };
 
 const STATE = {
@@ -112,79 +114,63 @@ async function fetchFromAPI(endpoint, params = {}) {
         ? CORS_PROXY + encodeURIComponent(url.toString())
         : url.toString();
 
-    try {
-        STATE.metrics.apiCallsMade++;
-        updateMetrics();
+    let lastError;
 
-        console.log('🔍 API Request:', {
-            endpoint: endpoint,
-            url: finalUrl,
-            originalUrl: url.toString(),
-            params: params,
-            usingProxy: USE_CORS_PROXY
-        });
+    // Auto-Retry Loop (1 to MAX_RETRIES)
+    for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
+        try {
+            STATE.metrics.apiCallsMade++;
+            updateMetrics();
 
-        const response = await fetch(finalUrl);
-
-        console.log('📡 API Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok,
-            url: response.url
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('❌ API Error Response:', {
-                status: response.status,
-                statusText: response.statusText,
-                errorData: errorData,
-                endpoint: endpoint,
-                url: url.toString()
-            });
-
-            let errorMessage = 'Failed to fetch data. ';
-            if (response.status === 401) {
-                errorMessage += 'Invalid API key. Please check your TMDB API key.';
-            } else if (response.status === 404) {
-                errorMessage += 'Resource not found.';
-            } else if (response.status === 429) {
-                errorMessage += 'Too many requests. Please wait a moment.';
-            } else {
-                errorMessage += `Error ${response.status}: ${errorData.status_message || response.statusText}`;
+            if (attempt > 1) {
+                console.log(`🔄 Retry Attempt ${attempt}/${CONFIG.MAX_RETRIES} for: ${endpoint}`);
             }
 
-            throw new Error(errorMessage);
+            const response = await fetch(finalUrl);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+
+                // If it's a server error (500+) or Rate Limit (429), we should retry
+                if (response.status >= 500 || response.status === 429) {
+                    throw new Error(`Server error ${response.status}`);
+                }
+
+                // For 4xx errors (except 429), it's likely a permanent error, don't retry
+                let errorMessage = 'Failed to fetch data. ';
+                if (response.status === 401) {
+                    errorMessage += 'Invalid API key.';
+                } else if (response.status === 404) {
+                    errorMessage += 'Resource not found.';
+                } else {
+                    errorMessage += `Error ${response.status}: ${errorData.status_message || response.statusText}`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            return data;
+
+        } catch (error) {
+            lastError = error;
+            console.warn(`⚠️ Attempt ${attempt} failed: ${error.message}`);
+
+            // Only wait and try again if we haven't reached the limit
+            if (attempt < CONFIG.MAX_RETRIES) {
+                await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * attempt)); // Exponential backoff
+            }
         }
-
-        const data = await response.json();
-        console.log('✅ API Success:', {
-            endpoint: endpoint,
-            resultsCount: data.results?.length || 'N/A',
-            totalResults: data.total_results || 'N/A'
-        });
-
-        return data;
-    } catch (error) {
-        console.error('❌ API Error:', {
-            message: error.message,
-            endpoint: endpoint,
-            url: finalUrl,
-            originalUrl: url.toString(),
-            params: params,
-            usingProxy: USE_CORS_PROXY,
-            error: error
-        });
-
-        // Suggest using proxy if network error and not already using it
-        if (!USE_CORS_PROXY && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
-            console.warn('💡 Network error detected! Try enabling CORS proxy:');
-            console.warn('   Set USE_CORS_PROXY = true at the top of script.js');
-        }
-
-        showToast(error.message || 'Failed to fetch data. Please try again.', 'error');
-        return null;
     }
+
+    // If we reach here, all retries failed
+    console.error('❌ All API retries failed:', {
+        message: lastError.message,
+        endpoint: endpoint,
+        url: finalUrl
+    });
+
+    showToast(lastError.message || 'Failed to fetch data after multiple attempts.', 'error');
+    return null;
 }
 
 async function searchContent(query, page = 1) {

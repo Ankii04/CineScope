@@ -14,6 +14,7 @@ A stunning, modern web application for discovering movies and TV shows with **in
 - **Infinite Scroll** with throttled scroll events (200ms delay)
 - **Advanced Filtering** by genre, year, and popularity
 - **Movie/TV Show Details** with trailers, cast, and ratings
+- **Contextual Recommendations** - See similar movies within the details modal
 - **Watchlist Management** with localStorage persistence
 - **Performance Metrics** showing API efficiency
 
@@ -25,9 +26,11 @@ A stunning, modern web application for discovering movies and TV shows with **in
 - **Skeleton Loading** for better UX
 - **Toast Notifications** for user feedback
 
-### ⚡ Performance Features
+### ⚡ Performance & Stability
 - **Debounce**: Search input delays API calls until user stops typing
 - **Throttle**: Scroll events limited to prevent excessive function calls
+- **Auto-Retry Mechanism**: Handles temporary network issues with 3 retry attempts
+- **Stable CORS Proxy**: Powered by `corsproxy.io` for reliable data fetching
 - **Lazy Loading**: Images load only when visible
 - **API Call Tracking**: Real-time metrics showing efficiency gains
 
@@ -75,9 +78,9 @@ A stunning, modern web application for discovering movies and TV shows with **in
 - Filter by **Genre**, **Year**, or **Sort Order**
 - Scroll down for **infinite loading** (throttled scroll events)
 
-### View Details
+### View Details & Recommendations
 - Click any movie/TV show card to see full details
-- Watch trailers, view cast information, and read overviews
+- Scroll down in the details modal to see **Contextual Recommendations**
 - Add to your watchlist with one click
 
 ### Manage Watchlist
@@ -111,29 +114,20 @@ function debounce(func, wait) {
 }
 ```
 
-**Use Case**: Search input
-- **Without debounce**: Every keystroke = 1 API call (typing "Avengers" = 8 calls)
-- **With debounce**: Wait 300ms after typing stops = 1 API call
-- **Result**: 87.5% reduction in API calls!
-
-### Throttle Function
+### Auto-Retry Logic
+The application now includes an exponential backoff retry mechanism to ensure stability:
 ```javascript
-function throttle(func, wait) {
-    let inThrottle;
-    return function executedFunction(...args) {
-        if (!inThrottle) {
-            func.apply(this, args);
-            inThrottle = true;
-            setTimeout(() => (inThrottle = false), wait);
+for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
+    try {
+        const response = await fetch(finalUrl);
+        // ... handle response
+    } catch (error) {
+        if (attempt < CONFIG.MAX_RETRIES) {
+            await new Promise(r => setTimeout(r, 1000 * attempt));
         }
-    };
+    }
 }
 ```
-
-**Use Case**: Scroll events
-- **Without throttle**: Scroll fires 100+ events per second
-- **With throttle**: Limited to 1 event every 200ms (5 per second)
-- **Result**: 95% reduction in function executions!
 
 ## 🎯 Project Structure
 
@@ -141,7 +135,7 @@ function throttle(func, wait) {
 movie-discovery-hub/
 ├── index.html          # Main HTML structure
 ├── styles.css          # Premium CSS with glassmorphism
-├── script.js           # JavaScript with throttle/debounce
+├── script.js           # JavaScript with throttle/debounce/retries
 └── README.md           # This file
 ```
 
@@ -150,120 +144,6 @@ movie-discovery-hub/
 This project uses the **TMDB (The Movie Database) API**:
 - **Free tier** with 1000 requests per day
 - No credit card required
-- API key included in the code (free public key)
-
-### Get Your Own API Key (Optional)
-1. Visit [TMDB](https://www.themoviedb.org/)
-2. Create a free account
-3. Go to Settings → API
-4. Request an API key
-5. Replace the key in `script.js`:
-   ```javascript
-   API_KEY: 'your-api-key-here'
-   ```
-
-## 📊 Performance Metrics Explained
-
-### API Calls Made
-Total number of actual API requests sent to TMDB.
-
-### API Calls Saved
-Number of API calls prevented by debounce/throttle techniques.
-
-### Search Events
-Total number of times the search input changed.
-
-### Scroll Events
-Total number of scroll events triggered by the user.
-
-### Efficiency
-Percentage of API calls saved: `(Saved / (Made + Saved)) × 100`
-
-## 🎨 Customization
-
-### Change Colors
-Edit CSS variables in `styles.css`:
-```css
-:root {
-    --primary: #6366f1;      /* Main brand color */
-    --secondary: #ec4899;    /* Accent color */
-    --accent: #f59e0b;       /* Highlight color */
-}
-```
-
-### Adjust Delays
-Modify timing in `script.js`:
-```javascript
-const CONFIG = {
-    DEBOUNCE_DELAY: 300,  // Search delay (ms)
-    THROTTLE_DELAY: 200,  // Scroll delay (ms)
-};
-```
-
-### Change Layout
-Modify grid columns in `styles.css`:
-```css
-.movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-}
-```
-
-## 🌟 Key Learning Points
-
-### 1. **Debounce vs Throttle**
-- **Debounce**: Delays execution until after a pause
-- **Throttle**: Limits execution frequency
-- **When to use**: Debounce for search, throttle for scroll/resize
-
-### 2. **API Optimization**
-- Reduce unnecessary API calls
-- Improve user experience
-- Save bandwidth and costs
-
-### 3. **Modern CSS**
-- Glassmorphism with `backdrop-filter`
-- CSS Grid for responsive layouts
-- CSS variables for theming
-- Smooth animations with `transition`
-
-### 4. **Vanilla JavaScript**
-- No frameworks needed for powerful apps
-- Better performance understanding
-- Full control over functionality
-
-## 🐛 Troubleshooting
-
-### Images Not Loading
-- Check your internet connection
-- TMDB API might be down (rare)
-- Try refreshing the page
-
-### Search Not Working
-- Verify API key is valid
-- Check browser console for errors
-- Ensure JavaScript is enabled
-
-### Performance Metrics Not Updating
-- Open the metrics panel (click icon on right)
-- Perform some searches and scrolling
-- Metrics update in real-time
-
-## 📱 Browser Support
-
-- ✅ Chrome 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-- ✅ Edge 90+
-
-## 🚀 Future Enhancements
-
-- [ ] User authentication
-- [ ] Personal ratings and reviews
-- [ ] Social sharing features
-- [ ] Advanced search filters
-- [ ] Recommendation engine
-- [ ] Dark/Light theme toggle
-- [ ] Multiple language support
 
 ## 📝 License
 
@@ -277,15 +157,4 @@ This project is open source and available for educational purposes.
 
 ## 👨‍💻 Author
 
-Created as a demonstration of **throttle and debounce techniques** in modern web development.
-
----
-
-### 🎓 Educational Value
-
-This project is perfect for:
-- Learning throttle and debounce concepts
-- Understanding API optimization
-- Practicing modern CSS techniques
-- Building real-world applications
-- Portfolio showcase
+Created as a demonstration of **throttle, debounce, and API stability techniques** in modern web development.
