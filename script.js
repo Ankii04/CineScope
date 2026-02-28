@@ -1,6 +1,6 @@
 // ⚠️ NETWORK FIX: If you're getting "Failed to fetch" errors, set USE_CORS_PROXY to true
-const USE_CORS_PROXY = true; // Changed to true for maximum reliability
-const CORS_PROXY = 'https://corsproxy.io/?'; // Switched to a more stable proxy
+const USE_CORS_PROXY = true; // Use proxy for bypassing strict network firewalls
+const CORS_PROXY = 'https://api.allorigins.win/raw?url='; // Highly stable proxy
 
 const CONFIG = {
     API_KEY: '8265bd1679663a7ea12ac168da84d2e8', // TMDB API Key (free tier)
@@ -109,9 +109,9 @@ async function fetchFromAPI(endpoint, params = {}) {
         if (params[key]) url.searchParams.append(key, params[key]);
     });
 
-    // Apply CORS proxy if enabled - using "?url=" for better compatibility
+    // Apply CORS proxy if enabled
     const finalUrl = USE_CORS_PROXY
-        ? `${CORS_PROXY}url=${encodeURIComponent(url.toString())}`
+        ? `${CORS_PROXY}${encodeURIComponent(url.toString())}`
         : url.toString();
 
     let lastError;
