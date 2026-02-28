@@ -1,5 +1,5 @@
 // ⚠️ NETWORK FIX: If you're getting "Failed to fetch" errors, set USE_CORS_PROXY to true
-const USE_CORS_PROXY = true; // Use proxy for bypassing strict network firewalls
+const USE_CORS_PROXY = false; // Disabled proxy to fetch directly from fast TMDB API
 const CORS_PROXY = 'https://api.allorigins.win/raw?url='; // Highly stable proxy
 
 const CONFIG = {
