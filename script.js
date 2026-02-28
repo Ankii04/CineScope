@@ -109,65 +109,74 @@ async function fetchFromAPI(endpoint, params = {}) {
         if (params[key]) url.searchParams.append(key, params[key]);
     });
 
-    // Apply CORS proxy if enabled
+    // Apply CORS proxy if enabled - using "?url=" for better compatibility
     const finalUrl = USE_CORS_PROXY
-        ? CORS_PROXY + encodeURIComponent(url.toString())
+        ? `${CORS_PROXY}url=${encodeURIComponent(url.toString())}`
         : url.toString();
 
     let lastError;
 
-    // Auto-Retry Loop (1 to MAX_RETRIES)
     for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
         try {
             STATE.metrics.apiCallsMade++;
             updateMetrics();
 
-            if (attempt > 1) {
-                console.log(`🔄 Retry Attempt ${attempt}/${CONFIG.MAX_RETRIES} for: ${endpoint}`);
-            }
+            console.log(`🔍 API Request (Attempt ${attempt}):`, {
+                endpoint: endpoint,
+                url: finalUrl,
+                originalUrl: url.toString()
+            });
 
             const response = await fetch(finalUrl);
+
+            console.log(`📡 API Response (Attempt ${attempt}):`, {
+                status: response.status,
+                ok: response.ok
+            });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
 
-                // If it's a server error (500+) or Rate Limit (429), we should retry
+                // If it's a server error or rate limit, throw to retry
                 if (response.status >= 500 || response.status === 429) {
                     throw new Error(`Server error ${response.status}`);
                 }
 
-                // For 4xx errors (except 429), it's likely a permanent error, don't retry
+                // For 4xx errors, show error and BREAK (don't retry)
                 let errorMessage = 'Failed to fetch data. ';
-                if (response.status === 401) {
-                    errorMessage += 'Invalid API key.';
-                } else if (response.status === 404) {
-                    errorMessage += 'Resource not found.';
-                } else {
-                    errorMessage += `Error ${response.status}: ${errorData.status_message || response.statusText}`;
-                }
-                throw new Error(errorMessage);
+                if (response.status === 401) errorMessage += 'Invalid API key.';
+                else if (response.status === 404) errorMessage += 'Resource not found.';
+                else errorMessage += `Error ${response.status}: ${errorData.status_message || response.statusText}`;
+
+                showToast(errorMessage, 'error');
+                return null;
             }
 
             const data = await response.json();
+
+            // Check if we got expected data structure
+            if (!data || (endpoint.includes('list') === false && !data.results && !data.id)) {
+                console.warn('⚠️ API returned unexpected data format:', data);
+                return data;
+            }
+
+            console.log('✅ API Success:', {
+                endpoint: endpoint,
+                resultsCount: data.results?.length || (data.id ? '1 (Detail)' : 'N/A')
+            });
+
             return data;
 
         } catch (error) {
             lastError = error;
             console.warn(`⚠️ Attempt ${attempt} failed: ${error.message}`);
 
-            // Only wait and try again if we haven't reached the limit
             if (attempt < CONFIG.MAX_RETRIES) {
-                await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * attempt)); // Exponential backoff
+                const delay = CONFIG.RETRY_DELAY * attempt;
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
     }
-
-    // If we reach here, all retries failed
-    console.error('❌ All API retries failed:', {
-        message: lastError.message,
-        endpoint: endpoint,
-        url: finalUrl
-    });
 
     showToast(lastError.message || 'Failed to fetch data after multiple attempts.', 'error');
     return null;
