@@ -542,6 +542,7 @@ async function showMovieDetails(id) {
     const trailer = data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
     const director = data.credits?.crew?.find(c => c.job === 'Director');
     const cast = data.credits?.cast?.slice(0, 5) || [];
+    const recommendations = data.similar?.results?.slice(0, 10) || [];
 
     body.innerHTML = `
         <div class="movie-detail-header" style="
@@ -642,11 +643,28 @@ async function showMovieDetails(id) {
                 align-items: center;
                 gap: 0.5rem;
                 transition: all var(--transition-base);
-            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-glow)'"
-               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-glow)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                 <i class="fas fa-bookmark"></i>
                 ${isInWatchlist(data.id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
             </button>
+
+            ${recommendations.length > 0 ? `
+                <div class="recommendations-section">
+                    <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;">Recommended Movies</h3>
+                    <div class="recommendations-scroll">
+                        ${recommendations.map(rec => `
+                            <div class="recommendation-card" onclick="showMovieDetails(${rec.id})">
+                                <img src="${getPosterUrl(rec.poster_path)}" alt="${getTitle(rec)}" class="recommendation-poster">
+                                <div class="recommendation-title">${getTitle(rec)}</div>
+                                <div class="recommendation-meta">
+                                    <i class="fas fa-star" style="color: var(--accent); font-size: 0.7rem;"></i>
+                                    ${rec.vote_average ? rec.vote_average.toFixed(1) : 'N/A'} • ${getReleaseDate(rec)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `;
 }
@@ -811,5 +829,6 @@ async function initialize() {
 // Start the application
 document.addEventListener('DOMContentLoaded', initialize);
 
-// Make toggleWatchlist available globally for modal buttons
+// Make functions available globally for modal buttons and inline handlers
 window.toggleWatchlist = toggleWatchlist;
+window.showMovieDetails = showMovieDetails;
